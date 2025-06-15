@@ -80,4 +80,22 @@ app.get('/login', (req, res) => {
   });
 });
 
+
+
+// === Insecure fetch() with user-controlled URL ===
+function fetchUserData() {
+  const userUrl = document.getElementById("urlInput").value;
+  
+  // ❌ Vulnerable: user can control full URL
+  fetch(userUrl)
+    .then(response => response.text())
+    .then(data => {
+      document.getElementById("results").innerHTML = data;
+    })
+    .catch(err => {
+      console.error("Fetch error:", err);
+    });
+}
+
+
 app.listen(3001, () => console.log('App listening on port 3001'));
