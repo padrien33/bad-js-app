@@ -99,3 +99,20 @@ function fetchUserData() {
 
 
 app.listen(3001, () => console.log('App listening on port 3001'));
+const express = require("express");
+const mysql2 = require("mysql2");
+const bodyParser = require("body-parser");
+
+const app = express();
+const connection = mysql2.createConnection({ host: "localhost", user: "root", password: "", database: "test" });
+
+app.use(bodyParser.json());
+
+app.post("/search", (req, res) => {
+  const keyword = req.body.keyword;
+  const sql = `SELECT * FROM articles WHERE title LIKE '%${keyword}%'`; // ❌ vulnerable
+  connection.execute(sql, (err, results) => {
+    if (err) throw err;
+    res.json(results);
+  });
+});
