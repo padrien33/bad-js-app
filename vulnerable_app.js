@@ -65,16 +65,25 @@ app.get("/redirect", (req, res) => {
 });
 
 // 10. Missing Rate Limiting (brute-force example)
-app.post("/login", (req, res) => {
-  const { username, password } = req.body;
-  db.query(
-    `SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`, // ❌ SQL Injection + no throttling
-    (err, results) => {
-      if (results.length > 0) res.send("Logged in!");
-      else res.status(401).send("Invalid credentials");
-    }
-  );
+// After: safe from injection
+const sql = `
+  SELECT * FROM users
+  WHERE username = ?
+    AND password = ?
+`;
+
+db.query(sql, [username, password], (err, results) => {
+  if (err) {
+    console.error(err);
+    return res.status(500).send("Server error");
+  }
+  if (results.length > 0) {
+    res.send("Logged in!");
+  } else {
+    res.status(401).send("Invalid credentials");
+  }
 });
+
 
 app.listen(3000, () => {
   console.log("Vulnerable app running on http://localhost:3000");
