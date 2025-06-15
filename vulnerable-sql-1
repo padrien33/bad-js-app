@@ -1,33 +1,30 @@
-const express = require("express");
-const mysql = require("mysql");
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
-const app = express();
-const port = 3000;
+@WebServlet("/eval")
+public class EvalInjectionServlet extends HttpServlet {
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
 
-// Create MySQL connection
-const connection = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "password",
-  database: "demo_db",
-});
+        String expr = request.getParameter("expression"); // 🚨 Taint source
 
-// ❌ This route is vulnerable to SQL injection
-app.get("/users", function (req, res) {
-  const name = req.query.name; // 🚨 Taint source: req.query
+        ScriptEngineManager manager = new ScriptEngineManager();
+        ScriptEngine engine = manager.getEngineByName("JavaScript");
 
-  const sql = `SELECT * FROM users WHERE name = '${name}'`; // 🚨 Vulnerable SQL
-
-  connection.query(sql, function (err, results) {
-    if (err) {
-      console.error("Query error:", err);
-      res.status(500).send("Server error");
-    } else {
-      res.json(results);
+        try {
+            // 🚨 Taint sink: unsafe eval of user input
+            Object result = engine.eval(expr); 
+            response.getWriter().println("Result: " + result);
+        } catch (ScriptException e) {
+            response.getWriter().println("Error evaluating expression: " + e.getMessage());
+        }
     }
-  });
-});
-
-app.listen(port, () => {
-  console.log(`App running on http://localhost:${port}`);
-});
+}
