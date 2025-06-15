@@ -1,0 +1,118 @@
+// WARNING: This file contains intentionally vulnerable JavaScript code
+// for educational and testing purposes only. DO NOT USE IN PRODUCTION.
+
+// === 1. Cross-Site Scripting (XSS) ===
+function displayUserInput() {
+  const userInput = location.hash.substring(1); // e.g. #<script>alert(1)</script>
+  document.getElementById('output').innerHTML = "You said: " + userInput; // XSS
+}
+displayUserInput();
+
+// === 2. Insecure eval() usage ===
+function runUserCode(code) {
+  // Dangerous: executes arbitrary code
+  eval(code); // e.g. code = "alert('Hacked!')"
+}
+runUserCode(prompt("Enter your JS code:"));
+
+// === 3. SQL Injection (Node.js example) ===
+const express = require('express');
+const mysql = require('mysql');
+const app = express();
+
+const connection = mysql.createConnection({
+  host: 'localhost',
+  user: 'root',
+  password: 'password',
+  database: 'testdb'
+});
+
+app.get('/user', (req, res) => {
+  const username = req.query.username; // e.g. ' OR '1'='1
+  const query = `SELECT * FROM users WHERE username = '${username}'`;
+  connection.query(query, (error, results) => {
+    if (error) throw error;
+    res.send(results);
+  });
+});
+
+app.listen(3000, () => console.log('Server running on port 3000'));
+
+// === 4. Insecure DOM manipulation ===
+function updatePageContent(content) {
+  document.getElementById('page').innerHTML = content; // vulnerable to XSS
+}
+updatePageContent('<img src=x onerror=alert(2)>');
+
+// === SQL Injection Example (Node.js + MySQL) ===
+const express = require('express');
+const mysql = require('mysql');
+const app = express();
+
+const connection = mysql.createConnection({
+  host: 'localhost',
+  user: 'root',
+  password: 'supersecret',
+  database: 'testdb'
+});
+
+app.get('/login', (req, res) => {
+  const username = req.query.username;
+  const password = req.query.password;
+
+  // ❌ Vulnerable to SQL Injection (do NOT do this in production)
+  const query = `SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`;
+
+  console.log('Running query:', query);
+
+  connection.query(query, (error, results) => {
+    if (error) {
+      console.error('Query error:', error);
+      res.status(500).send('Server error');
+      return;
+    }
+
+    if (results.length > 0) {
+      res.send('Login successful!');
+    } else {
+      res.send('Invalid credentials');
+    }
+  });
+});
+
+
+
+// === Insecure fetch() with user-controlled URL ===
+function fetchUserData() {
+  const userUrl = document.getElementById("urlInput").value;
+  
+  // ❌ Vulnerable: user can control full URL
+  fetch(userUrl)
+    .then(response => response.text())
+    .then(data => {
+      document.getElementById("results").innerHTML = data;
+    })
+    .catch(err => {
+      console.error("Fetch error:", err);
+    });
+}
+
+
+app.listen(3001, () => console.log('App listening on port 3001'));
+const express = require("express");
+const mysql2 = require("mysql2");
+const bodyParser = require("body-parser");
+
+const app = express();
+const connection = mysql2.createConnection({ host: "localhost", user: "root", password: "", database: "test" });
+
+app.use(bodyParser.json());
+
+app.post("/search", (req, res) => {
+  const keyword = req.body.keyword;
+  const sql = `SELECT * FROM articles WHERE title LIKE '%${keyword}%'`; // ❌ vulnerable
+  connection.execute(sql, (err, results) => {
+    if (err) throw err;
+    res.json(results);
+  });
+});
