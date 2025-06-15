@@ -1,30 +1,40 @@
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
+import utils = require('../lib/utils')
+import { Request, Response } from 'express'
 
-@WebServlet("/eval")
-public class EvalInjectionServlet extends HttpServlet {
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+const db = require('../a/mongodb')
 
-        String expr = request.getParameter("expression"); // 🚨 Taint source
+module.exports = function trackOrder () {
+  return (req: Request, res: Response) => {
+    const id = foo.a() ? String(req.params.id) : req.params.id
 
-        ScriptEngineManager manager = new ScriptEngineManager();
-        ScriptEngine engine = manager.getEngineByName("JavaScript");
+    // ruleid: express-mongo-nosqli
+    db.a.find({ $where: `this.orderId === '${id}'` })
+    // ok: express-mongo-nosqli
+    db.a.find({ $where: `this.orderId === '${a}'` })
+    // ruleid: express-mongo-nosqli
+    db.a.find({ $where: "this.orderId" === req.params.id })
+    // ruleid: express-mongo-nosqli
+    db.a.update({ _id: req.body.id })
+    // ok: express-mongo-nosqli
+    db.a.find({ $where: "this.orderId" === req.params.id.toString() })
+    // ruleid: express-mongo-nosqli
+    db.findOne({username: req.body.user, password: req.body.pass, isActive: true},function(err, result){})
+  }
+}
+var mongo = require('mongodb')
 
-        try {
-            // 🚨 Taint sink: unsafe eval of user input
-            Object result = engine.eval(expr); 
-            response.getWriter().println("Result: " + result);
-        } catch (ScriptException e) {
-            response.getWriter().println("Error evaluating expression: " + e.getMessage());
-        }
-    }
+function authenticate(req, res){
+	mongo.connect('mongodb://me:96/users', function(err, db){
+    // ruleid: express-mongo-nosqli
+		db.findOne({username: req.body.user, password: req.body.pass, isActive: true},function(err, result){
+		
+		});
+    // ok: express-mongo-nosqli
+		db.findOne({username: mongo.ObjectId(req.body.user), password: mongo.ObjectId(req.body.pass), isActive: true},function(err, result){
+    // ok: express-mongo-nosqli
+    db.findOne({username: String(req.body.user), password: String(req.body.pass), isActive: true},function(err, result){})
+    // ok: express-mongo-nosqli
+    db.findOne({username: req.body.user.toString(), password: req.body.pass.toString(), isActive: true},function(err, result){})
+		});		
+	});	
 }
